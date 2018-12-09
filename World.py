@@ -16,24 +16,40 @@ class World:
     player.coords[0] = size[1]/2
     obstacle.coords = [size[1]+300,0]
 
-    self.running = True
+    self.running = "first"
     self.screen = screen
     self.size = size
     self.guideline = size[1]-50
+    self.base_color = (27, 127, 214)
+    self.color = list(self.base_color)
     self.graphic = graphic
     self.gr_cloud = gr_cloud
-    self.speed = 20
+    self.speed = 10
     self.player = player
     self.obstacle = obstacle
+    self.score = 0
+    self.up_time = -1
 
   def restart(self):
     self.running = True
+    self.color = list(self.base_color)
     self.player.coords = [self.size[1]/2, 0]
     self.obstacle.coords = [self.size[1]+300, 0]
+    self.speed = 10
+    self.score = 0
+    self.up_time = -1
 
   def draw(self):
     screen = self.screen
-    screen.fill([27, 127, 214])
+    if self.score % 15 == 0:
+      for x in range(3):
+        res = self.base_color[x]/100
+        if self.color[x] - res >= 0:
+          self.color[x] -= res
+        else:
+          self.color[x] = 0
+
+    screen.fill(self.color)
 
     for x in self.earth:
       screen.blit(self.graphic, (x, self.guideline))
@@ -42,28 +58,28 @@ class World:
 
     font = pygame.font.Font("font/CabinSketch-Regular.ttf", 20)
     if self.score < 50:
-      txt = 'Press enter to jump'
+      txt = 'Press h to show the tutorial'
     else:
       txt = str(self.score)
     text = font.render(txt, True, (255, 255, 255))
     self.screen.blit(text, (10,10))
 
-    screen.blit(self.player.graphic, (self.player.coords[0], self.guideline-50 - self.player.coords[1]))
-    screen.blit(self.obstacle.graphic, (self.obstacle.coords[0], self.guideline-50 + 5))
+    screen.blit(self.player.graphic, (self.player.coords[0], self.guideline-80 - self.player.coords[1]))
+    screen.blit(self.obstacle.graphic, (self.obstacle.coords[0], self.guideline-60))
 
     pygame.display.update()
 
-  def playerUp(self, up_time):
-    if up_time < 10:
+  def playerUp(self):
+    if self.up_time < 10:
       self.player.coords[1] += 15
-    elif up_time >= 20:
+    elif self.up_time >= 25:
       self.player.coords[1] -= 15
 
   def moveObstacle(self):
-    if self.obstacle.coords[0] >= -50:
+    if self.obstacle.coords[0] >= -60:
       self.obstacle.coords[0] -= self.speed
     else:
-      self.obstacle.coords[0] = self.size[1]+300
+      self.obstacle.coords[0] = self.size[1] + 50*randint(4, 15)
 
   def moveBackground(self):
     earth = self.earth
@@ -80,11 +96,30 @@ class World:
     if self.score % 90 == 0:
       self.clouds.append([randint(50,150)+len(self.clouds)*90, randint(50,150)])
 
-  def checkCollision(self):
-    if self.player.coords[1] - self.obstacle.coords[1] < 50 and self.player.coords[0] == self.obstacle.coords[0]:
-      self.running = 2
+  def updateScore(self):
+    f = open("data/score.txt", "r")
+    pre = int(f.read())
+    f.close()
+    if self.score > pre:
+      f = open("data/score.txt", "w")
+      f.write(str(self.score))
+      f.close()
+      return 1 
+    return pre
 
-    if self.score > 150 and self.speed != 25:
-      self.speed = 25
+  def checkCollision(self):
+    if -30 < self.player.coords[1] - self.obstacle.coords[1] < 60 and -20 < self.player.coords[0] - self.obstacle.coords[0] < 50:
+
+      score_check = self.updateScore()
+
+      if score_check == 1:
+        self.str_score = [str(self.score) + " - best score!"]
+      else:
+        self.str_score = ["Score: " + str(self.score), "Best score: " + str(score_check)]
+
+      return "end"
+
+    if self.score % 50 == 0:
+      self.speed += 0.5
 
 
