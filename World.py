@@ -1,6 +1,7 @@
 from random import randint
 import pygame, sys
 from pygame.locals import *
+import files
 
 class World:
   def __init__(self, screen, size, graphic, gr_cloud, player, obstacle):
@@ -24,7 +25,7 @@ class World:
     self.color = list(self.base_color)
     self.graphic = graphic
     self.gr_cloud = gr_cloud
-    self.speed = 10
+    self.speed = 15
     self.player = player
     self.obstacle = obstacle
     self.score = 0
@@ -35,7 +36,7 @@ class World:
     self.color = list(self.base_color)
     self.player.coords = [self.size[1]/2, 0]
     self.obstacle.coords = [self.size[1]+300, 0]
-    self.speed = 10
+    self.speed = 15
     self.score = 0
     self.up_time = -1
 
@@ -58,7 +59,7 @@ class World:
 
     font = pygame.font.Font("font/CabinSketch-Regular.ttf", 20)
     if self.score < 50:
-      txt = 'Press h to show the tutorial'
+      txt = self.texts["help"]
     else:
       txt = str(self.score)
     text = font.render(txt, True, (255, 255, 255))
@@ -70,9 +71,9 @@ class World:
     pygame.display.update()
 
   def playerUp(self):
-    if self.up_time < 10:
+    if self.up_time < 5:
       self.player.coords[1] += 15
-    elif self.up_time >= 25:
+    elif self.up_time >= 20:
       self.player.coords[1] -= 15
 
   def moveObstacle(self):
@@ -97,25 +98,23 @@ class World:
       self.clouds.append([randint(50,150)+len(self.clouds)*90, randint(50,150)])
 
   def updateScore(self):
-    f = open("data/score.txt", "r")
-    pre = int(f.read())
-    f.close()
+    pre = int(files.get_data("score"))
     if self.score > pre:
-      f = open("data/score.txt", "w")
-      f.write(str(self.score))
-      f.close()
+      files.put_data("score", self.score)
       return 1 
     return pre
 
   def checkCollision(self):
-    if -30 < self.player.coords[1] - self.obstacle.coords[1] < 60 and -20 < self.player.coords[0] - self.obstacle.coords[0] < 50:
+    distance = (self.obstacle.size[0]+self.player.size[0])/2
+    distance1 = (self.obstacle.size[1]+self.player.size[1])/2
+    if -distance < self.player.coords[0] - self.obstacle.coords[0] < distance and -distance1 < self.player.coords[1] - self.obstacle.coords[1] < distance1:
 
       score_check = self.updateScore()
 
       if score_check == 1:
-        self.str_score = [str(self.score) + " - best score!"]
+        self.str_score = [self.texts["score"][0].format(str(self.score))]
       else:
-        self.str_score = ["Score: " + str(self.score), "Best score: " + str(score_check)]
+        self.str_score = [self.texts["score"][1].format(str(self.score)), self.texts["score"][2].format(str(score_check))]
 
       return "end"
 
